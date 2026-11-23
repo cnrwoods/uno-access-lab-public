@@ -1,0 +1,54 @@
+@page
+@{
+    ViewData["Title"] = "Overview";
+}
+
+<section class="welcome" aria-labelledby="welcome-title">
+    <p class="eyebrow">Your access workspace</p>
+    <h1 id="welcome-title">Your UNO.<br />Your access rules.</h1>
+    <p class="intro">Choose an active policy and set how fingerprint and PIN access should work on your bench UNO.</p>
+    <a class="primary-link" asp-page="/Policies/Index">Manage access policies <span aria-hidden="true">↗</span></a>
+</section>
+
+<section id="devices" class="device-panel" aria-labelledby="devices-title">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">PoC device overview</p>
+            <h2 id="devices-title">Bench device</h2>
+        </div>
+        <span class="status-label">Connection status not tracked</span>
+    </div>
+    <div class="empty-state">
+        <div class="device-symbol" aria-hidden="true">
+            <span class="sensor"></span><span class="indicator"></span>
+        </div>
+        <h3>Arduino UNO R4 WiFi</h3>
+        <p>A configured bench device fetches its active policy.<br class="desktop-break" />
+            Fingerprint matching and PIN verification happen on the UNO.</p>
+    </div>
+    <div class="panel-note">Provision the same registration key on the portal and UNO before using PIN policies. Device registration and check-in tracking are not implemented.</div>
+</section>
+
+<section class="roadmap" aria-labelledby="roadmap-title">
+    <div class="section-heading">
+        <h2 id="roadmap-title">Your access workspace</h2>
+        <span class="muted">One step at a time</span>
+    </div>
+    <div class="feature-grid">
+        <article class="feature">
+            <span class="feature-number" aria-hidden="true">01</span>
+            <h3>Bench key setup</h3>
+            <p>Local setup provisions a shared PIN-verification key on the portal and UNO. Device registration is planned for a future update.</p>
+        </article>
+        <article class="feature">
+            <span class="feature-number" aria-hidden="true">02</span>
+            <h3>Access policies</h3>
+            <p>Create policies and make them available through the policy API. <a asp-page="/Policies/Index">Manage your policies</a>.</p>
+        </article>
+        <article class="feature">
+            <span class="feature-number" aria-hidden="true">03</span>
+            <h3>Activity</h3>
+            <p>Device check-in history and access events are planned for a future update.</p>
+        </article>
+    </div>
+</section>

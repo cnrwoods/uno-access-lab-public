@@ -1,0 +1,58 @@
+@page
+@model ManagementPortal.Pages.MyAccountModel
+@{
+    ViewData["Title"] = "My Account";
+}
+
+<section class="welcome account-welcome" aria-labelledby="account-title">
+    <p class="eyebrow">Your profile</p>
+    <h1 id="account-title">My Account</h1>
+    <p class="intro">Your profile details and access to this workspace.</p>
+</section>
+
+<section class="account-card" aria-labelledby="profile-title">
+    <div class="account-profile-header">
+        <span class="account-avatar" aria-hidden="true">@Model.Initials</span>
+        <div>
+            <p class="eyebrow">Profile</p>
+            <h2 id="profile-title">@Model.DisplayName</h2>
+        </div>
+    </div>
+    <dl class="account-details">
+        <div>
+            <dt>Display name</dt>
+            <dd>@Model.DisplayName</dd>
+        </div>
+        <div>
+            <dt>Username</dt>
+            <dd>@(Model.Username ?? "Not provided")</dd>
+        </div>
+        <div>
+            <dt>First name</dt>
+            <dd>@(Model.GivenName ?? "Not provided")</dd>
+        </div>
+        <div>
+            <dt>Last name</dt>
+            <dd>@(Model.FamilyName ?? "Not provided")</dd>
+        </div>
+        <div>
+            <dt>Email</dt>
+            <dd>@(Model.Email ?? "Not provided")</dd>
+        </div>
+        <div>
+            <dt>Email verification</dt>
+            <dd>@Model.EmailVerification</dd>
+        </div>
+    </dl>
+    <div class="account-access" aria-labelledby="access-title">
+        <h2 id="access-title">Portal access</h2>
+        <ul class="account-roles" aria-label="Your portal roles">
+            @foreach (var role in Model.PortalRoles)
+            {
+                <li>@role</li>
+            }
+        </ul>
+        <p>Your portal administrator manages these permissions.</p>
+    </div>
+    <p class="account-note">Profile details are provided by your sign-in account. This page is read-only.</p>
+</section>

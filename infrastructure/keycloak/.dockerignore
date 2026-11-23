@@ -1,0 +1,7 @@
+# Only the image recipe and theme assets enter the remote ACR build context.
+# In particular, local config, secrets, realm exports and generated files stay local.
+**
+!Containerfile
+!.dockerignore
+!themes/
+!themes/**

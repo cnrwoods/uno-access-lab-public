@@ -1,0 +1,60 @@
+name: Deploy management portal
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: managementportal-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' && vars.DEPLOY_MANAGEMENTPORTAL == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install .NET 10
+        id: dotnet
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Select the installed SDK
+        run: dotnet new globaljson --sdk-version "${{ steps.dotnet.outputs.dotnet-version }}" --roll-forward latestPatch
+
+      - name: Check policy API
+        run: dotnet run --project tests/policyapi -c Release
+
+      - name: Check management portal
+        run: dotnet run --project tests/managementportal -c Release
+
+      - name: Publish management portal
+        run: >-
+          dotnet publish src/managementportal/ManagementPortal.csproj
+          -c Release --self-contained false -p:UseAppHost=false
+          -o "${{ runner.temp }}/managementportal-publish"
+
+      - name: Sign in to Azure with OIDC
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy management portal
+        uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3.0.8
+        with:
+          app-name: app-fingauth-uks
+          resource-group-name: RG-fingauth.conorwoods.co.uk
+          package: ${{ runner.temp }}/managementportal-publish

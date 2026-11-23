@@ -1,0 +1,195 @@
+:root {
+    color-scheme: light;
+    --fingauth-ink: #16362e;
+    --fingauth-muted: #5e706a;
+    --fingauth-accent: #12644f;
+    --fingauth-border: #dce5df;
+    --fingauth-background: #f6f8f4;
+    --pf-v5-global--FontFamily--text: "Segoe UI", system-ui, sans-serif;
+    --pf-v5-global--FontFamily--heading: "Segoe UI", system-ui, sans-serif;
+    --pf-v5-global--primary-color--100: #12644f;
+    --pf-v5-global--primary-color--200: #16362e;
+    --pf-v5-global--Color--100: #16362e;
+    --pf-v5-global--Color--200: #5e706a;
+}
+
+body#keycloak-bg, body#keycloak-bg * { box-sizing: border-box; }
+
+html.login-pf, body#keycloak-bg {
+    margin: 0;
+    background: var(--fingauth-background);
+    color: var(--fingauth-ink);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    line-height: 1.6;
+}
+
+body#keycloak-bg .pf-v5-c-login {
+    display: block;
+    min-height: 100vh;
+    padding: 0;
+    background: var(--fingauth-background);
+}
+
+body#keycloak-bg .pf-v5-c-login__container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+}
+
+#kc-header {
+    width: 100%;
+    padding: 24px max(24px, calc((100% - 1080px) / 2));
+    border-bottom: 1px solid var(--fingauth-border);
+    background: #ffffff;
+}
+
+#kc-header-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: var(--fingauth-ink);
+    font-size: 18px;
+    font-weight: 650;
+    line-height: 1.3;
+    letter-spacing: -.4px;
+    text-transform: none;
+    white-space: normal;
+}
+
+#kc-header-wrapper::before {
+    content: "";
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    background: url("../img/fingauth-app-logo.png") center / cover no-repeat;
+}
+
+body#keycloak-bg .pf-v5-c-login__main {
+    width: min(520px, calc(100% - 48px));
+    padding: 0;
+    margin: 64px auto;
+    overflow: hidden;
+    border: 1px solid var(--fingauth-border);
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: none;
+}
+
+body#keycloak-bg .pf-v5-c-login__main-header {
+    padding: 32px 32px 0;
+}
+
+#kc-page-title {
+    margin: 0;
+    color: var(--fingauth-ink);
+    font-size: clamp(30px, 4vw, 40px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -1.2px;
+    overflow-wrap: anywhere;
+}
+
+body#keycloak-bg .pf-v5-c-login__main > .pf-v5-c-login__main-body {
+    padding: 24px 32px 32px;
+}
+
+body#keycloak-bg .pf-v5-c-form {
+    gap: 22px;
+}
+
+body#keycloak-bg .pf-v5-c-form__label-text {
+    color: var(--fingauth-ink);
+    font-weight: 600;
+}
+
+body#keycloak-bg .pf-v5-c-form-control,
+body#keycloak-bg .pf-v5-c-form-control::before,
+body#keycloak-bg .pf-v5-c-form-control::after {
+    border-radius: 8px;
+}
+
+/* Keep Keycloak's forms, field errors, password visibility and social links native. */
+#kc-login,
+#kc-social-providers a.pf-v5-c-button {
+    --pf-v5-c-button--BorderRadius: 8px;
+    --pf-v5-c-button--after--BorderRadius: 8px;
+    --pf-v5-c-button--m-primary--BackgroundColor: var(--fingauth-accent);
+    --pf-v5-c-button--m-primary--hover--BackgroundColor: var(--fingauth-ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 18px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--fingauth-accent);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+#kc-login:hover,
+#kc-login:focus,
+#kc-social-providers a.pf-v5-c-button:hover,
+#kc-social-providers a.pf-v5-c-button:focus {
+    background: var(--fingauth-ink);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+#kc-social-providers ul {
+    padding: 0;
+    list-style: none;
+}
+
+#kc-login:disabled,
+#kc-social-providers a[aria-disabled="true"] {
+    opacity: .65;
+}
+
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 3px solid #a35b18;
+    outline-offset: 5px;
+}
+
+body#keycloak-bg .pf-v5-c-login__main > .pf-v5-c-login__main-footer {
+    padding: 18px 32px;
+    border-top: 1px solid var(--fingauth-border);
+    background: #fafbf9;
+}
+
+body#keycloak-bg .pf-v5-c-login__main-body > .pf-v5-c-login__main-footer {
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.fingauth-provider-credit {
+    margin: 0;
+    color: var(--fingauth-muted);
+    font-size: 12px;
+    text-align: center;
+}
+
+.fingauth-provider-credit a {
+    color: var(--fingauth-ink);
+    font-weight: 650;
+    text-underline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+    #kc-header { padding: 18px 24px; }
+    body#keycloak-bg .pf-v5-c-login__main { margin: 32px auto; }
+    body#keycloak-bg .pf-v5-c-login__main-header { padding: 26px 24px 0; }
+    body#keycloak-bg .pf-v5-c-login__main > .pf-v5-c-login__main-body { padding: 20px 24px 26px; }
+    body#keycloak-bg .pf-v5-c-login__main > .pf-v5-c-login__main-footer { padding: 18px 24px; }
+}

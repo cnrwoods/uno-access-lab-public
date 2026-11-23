@@ -1,0 +1,18 @@
+@page "/login"
+@model ManagementPortal.Pages.LoginModel
+@{
+    ViewData["Title"] = "Log in";
+}
+
+<section class="welcome login-welcome" aria-labelledby="login-title">
+    <p class="eyebrow">Fing Auth</p>
+    <h1 id="login-title">Your access workspace.<br />One secure sign-in.</h1>
+    <p class="intro">Log in to manage your UNO and its access policies.</p>
+    @if (Model.AuthenticationFailed)
+    {
+        <div class="notice notice-error" role="alert">We couldn’t complete your sign-in. Please try again.</div>
+    }
+    <form method="post">
+        <button class="primary-link" type="submit">Log in <span aria-hidden="true">↗</span></button>
+    </form>
+</section>

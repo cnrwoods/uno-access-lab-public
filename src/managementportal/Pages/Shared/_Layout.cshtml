@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Fing Auth device management portal." />
+    <title>@ViewData["Title"] · Fing Auth</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="brand" asp-page="/Index" aria-label="Fing Auth home">
+                <span class="brand-mark" aria-hidden="true">FA</span>
+                <span>Fing Auth<small>Management portal</small></span>
+            </a>
+            @if (User.IsInRole("platform-admin"))
+            {
+                <nav class="main-nav" aria-label="Main navigation">
+                    <a asp-page="/Index" aria-current="@(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "page" : null)">Overview</a>
+                    <a asp-page="/Policies/Index" aria-current="@(ViewContext.RouteData.Values["page"]?.ToString()?.StartsWith("/Policies", StringComparison.Ordinal) == true ? "page" : null)">Policies</a>
+                    <a asp-page="/MyAccount" aria-current="@(ViewContext.RouteData.Values["page"]?.ToString() == "/MyAccount" ? "page" : null)">My Account</a>
+                    <form method="post" asp-page="/Logout">
+                        <button class="nav-button" type="submit">Sign out</button>
+                    </form>
+                </nav>
+            }
+        </div>
+    </header>
+    <main id="main-content" class="container" tabindex="-1">
+        @RenderBody()
+    </main>
+    <footer class="container site-footer">
+        <span>Fing Auth / UNO Access Lab</span>
+        <span>Built for the bench. Designed to grow.</span>
+    </footer>
+</body>
+</html>

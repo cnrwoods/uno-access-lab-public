@@ -1,0 +1,333 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Fing Auth App Service/Blob foundation only. Does not deploy application code, secrets, Front Door routes, public DNS or identity-provider changes."
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "uksouth"
+    },
+    "appServicePlanName": {
+      "type": "string",
+      "defaultValue": "asp-fingauth-uks",
+      "minLength": 1
+    },
+    "webAppName": {
+      "type": "string",
+      "defaultValue": "app-fingauth-uks",
+      "minLength": 2,
+      "maxLength": 60
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "[concat('stfingauth', uniqueString(resourceGroup().id))]",
+      "minLength": 3,
+      "maxLength": 24
+    },
+    "containerName": {
+      "type": "string",
+      "defaultValue": "policies",
+      "allowedValues": [
+        "policies"
+      ]
+    },
+    "blobName": {
+      "type": "string",
+      "defaultValue": "policies.json",
+      "allowedValues": [
+        "policies.json"
+      ]
+    },
+    "publicHostname": {
+      "type": "string",
+      "defaultValue": "fingauth.conorwoods.co.uk"
+    },
+    "frontDoorId": {
+      "type": "string",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    "initializeAppSettings": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Deploy-Hosting.ps1 sets this false for an existing owned app, preserving settings added by later secret/deployment steps."
+      }
+    },
+    "includeAppService": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "False provisions the independent private Blob storage only; App Service, identity and its data role remain pending."
+      }
+    }
+  },
+  "variables": {
+    "webApiVersion": "2024-11-01",
+    "storageApiVersion": "2023-05-01",
+    "blobContributorRoleId": "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
+    "planId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+    "appId": "[resourceId('Microsoft.Web/sites', parameters('webAppName'))]",
+    "storageId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+    "containerId": "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', parameters('storageAccountName'), 'default', parameters('containerName'))]",
+    "tags": {
+      "ManagedBy": "uno-access-lab-managementportal",
+      "Application": "fingauth-managementportal",
+      "HostingStorageAccount": "[parameters('storageAccountName')]",
+      "PublicHostname": "[parameters('publicHostname')]"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2024-11-01",
+      "name": "[parameters('appServicePlanName')]",
+      "location": "[parameters('location')]",
+      "kind": "linux",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "B1",
+        "tier": "Basic",
+        "size": "B1",
+        "family": "B",
+        "capacity": 1
+      },
+      "properties": {
+        "reserved": true,
+        "perSiteScaling": false,
+        "elasticScaleEnabled": false
+      },
+      "condition": "[parameters('includeAppService')]"
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-05-01",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "tags": "[variables('tags')]",
+      "properties": {
+        "accessTier": "Hot",
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true,
+        "allowBlobPublicAccess": false,
+        "allowSharedKeyAccess": false,
+        "defaultToOAuthAuthentication": true,
+        "publicNetworkAccess": "Enabled",
+        "networkAcls": {
+          "bypass": "None",
+          "defaultAction": "Allow",
+          "ipRules": [],
+          "virtualNetworkRules": []
+        },
+        "encryption": {
+          "keySource": "Microsoft.Storage",
+          "services": {
+            "blob": {
+              "enabled": true
+            },
+            "file": {
+              "enabled": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "2023-05-01",
+      "name": "[concat(parameters('storageAccountName'), '/default')]",
+      "dependsOn": [
+        "[variables('storageId')]"
+      ],
+      "properties": {
+        "isVersioningEnabled": true,
+        "deleteRetentionPolicy": {
+          "enabled": true,
+          "days": 7
+        },
+        "containerDeleteRetentionPolicy": {
+          "enabled": true,
+          "days": 7
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2023-05-01",
+      "name": "[concat(parameters('storageAccountName'), '/default/', parameters('containerName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccountName'), 'default')]"
+      ],
+      "properties": {
+        "publicAccess": "None"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2024-11-01",
+      "name": "[parameters('webAppName')]",
+      "location": "[parameters('location')]",
+      "kind": "app,linux",
+      "tags": "[variables('tags')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "dependsOn": [
+        "[variables('planId')]"
+      ],
+      "properties": {
+        "serverFarmId": "[variables('planId')]",
+        "httpsOnly": true,
+        "clientAffinityEnabled": false,
+        "publicNetworkAccess": "Enabled",
+        "siteConfig": {
+          "linuxFxVersion": "DOTNETCORE|10.0",
+          "alwaysOn": true,
+          "ftpsState": "Disabled",
+          "minTlsVersion": "1.2",
+          "scmMinTlsVersion": "1.2",
+          "http20Enabled": true,
+          "use32BitWorkerProcess": false,
+          "remoteDebuggingEnabled": false,
+          "healthCheckPath": "/health/ready",
+          "ipSecurityRestrictionsDefaultAction": "Deny",
+          "ipSecurityRestrictions": [
+            {
+              "name": "AllowExistingFrontDoor",
+              "priority": 100,
+              "action": "Allow",
+              "ipAddress": "AzureFrontDoor.Backend",
+              "tag": "ServiceTag",
+              "headers": {
+                "x-azure-fdid": [
+                  "[parameters('frontDoorId')]"
+                ]
+              },
+              "description": "Allow only the existing Front Door profile."
+            }
+          ],
+          "scmIpSecurityRestrictionsUseMain": false,
+          "scmIpSecurityRestrictionsDefaultAction": "Allow",
+          "scmIpSecurityRestrictions": []
+        }
+      },
+      "condition": "[parameters('includeAppService')]"
+    },
+    {
+      "condition": "[and(parameters('includeAppService'), parameters('initializeAppSettings'))]",
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2024-11-01",
+      "name": "[concat(parameters('webAppName'), '/appsettings')]",
+      "dependsOn": [
+        "[variables('appId')]",
+        "[variables('containerId')]"
+      ],
+      "properties": {
+        "ASPNETCORE_ENVIRONMENT": "Production",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "false",
+        "WEBSITE_RUN_FROM_PACKAGE": "1",
+        "PolicyStore__Provider": "AzureBlob",
+        "PolicyStore__BlobServiceUri": "[reference(variables('storageId'), variables('storageApiVersion')).primaryEndpoints.blob]",
+        "PolicyStore__ContainerName": "[parameters('containerName')]",
+        "PolicyStore__BlobName": "[parameters('blobName')]",
+        "Hosting__Enabled": "true",
+        "Hosting__PublicHostname": "[parameters('publicHostname')]",
+        "Hosting__FrontDoorId": "[parameters('frontDoorId')]",
+        "Hosting__TrustAppServiceProxy": "true",
+        "AllowedHosts": "[if(parameters('includeAppService'), concat(parameters('publicHostname'), ';', reference(variables('appId'), variables('webApiVersion')).defaultHostName), parameters('publicHostname'))]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+      "apiVersion": "2024-11-01",
+      "name": "[concat(parameters('webAppName'), '/scm')]",
+      "dependsOn": [
+        "[variables('appId')]"
+      ],
+      "properties": {
+        "allow": false
+      },
+      "condition": "[parameters('includeAppService')]"
+    },
+    {
+      "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+      "apiVersion": "2024-11-01",
+      "name": "[concat(parameters('webAppName'), '/ftp')]",
+      "dependsOn": [
+        "[variables('appId')]"
+      ],
+      "properties": {
+        "allow": false
+      },
+      "condition": "[parameters('includeAppService')]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(variables('containerId'), variables('appId'), variables('blobContributorRoleId'))]",
+      "scope": "[variables('containerId')]",
+      "dependsOn": [
+        "[variables('appId')]",
+        "[variables('containerId')]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('blobContributorRoleId'))]",
+        "principalId": "[if(parameters('includeAppService'), reference(variables('appId'), variables('webApiVersion'), 'Full').identity.principalId, '00000000-0000-0000-0000-000000000000')]",
+        "principalType": "ServicePrincipal"
+      },
+      "condition": "[parameters('includeAppService')]"
+    }
+  ],
+  "outputs": {
+    "appServicePlanId": {
+      "type": "string",
+      "value": "[if(parameters('includeAppService'), variables('planId'), '')]"
+    },
+    "appServicePlanSku": {
+      "type": "string",
+      "value": "[if(parameters('includeAppService'), 'B1', '')]"
+    },
+    "webAppId": {
+      "type": "string",
+      "value": "[if(parameters('includeAppService'), variables('appId'), '')]"
+    },
+    "webAppDefaultHostname": {
+      "type": "string",
+      "value": "[if(parameters('includeAppService'), reference(variables('appId'), variables('webApiVersion')).defaultHostName, '')]"
+    },
+    "managedIdentityPrincipalId": {
+      "type": "string",
+      "value": "[if(parameters('includeAppService'), reference(variables('appId'), variables('webApiVersion'), 'Full').identity.principalId, '')]"
+    },
+    "storageAccountId": {
+      "type": "string",
+      "value": "[variables('storageId')]"
+    },
+    "blobServiceUri": {
+      "type": "string",
+      "value": "[reference(variables('storageId'), variables('storageApiVersion')).primaryEndpoints.blob]"
+    },
+    "policyContainerId": {
+      "type": "string",
+      "value": "[variables('containerId')]"
+    },
+    "frontDoorId": {
+      "type": "string",
+      "value": "[parameters('frontDoorId')]"
+    },
+    "initialAppSettingsWritten": {
+      "type": "bool",
+      "value": "[and(parameters('includeAppService'), parameters('initializeAppSettings'))]"
+    },
+    "appServiceIncluded": {
+      "type": "bool",
+      "value": "[parameters('includeAppService')]"
+    }
+  }
+}

@@ -1,0 +1,258 @@
+﻿@page
+@model ManagementPortal.Pages.Policies.IndexModel
+@using ManagementPortal.Pages.Policies
+@{
+    ViewData["Title"] = "Access policies";
+    const string pinSetupUrl = "https://github.com/cnrwoods/uno-access-lab-public/blob/main/src/managementportal/README.md#pin-setup";
+}
+
+<section class="welcome policy-welcome" aria-labelledby="policies-title">
+    <p class="eyebrow">Access policies</p>
+    <h1 id="policies-title">Choose how access works.</h1>
+    <p class="intro">Create rules for your UNO, then choose one active policy. Set the access method, allowed minutes and daily time window.</p>
+</section>
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="notice notice-success" role="status">@Model.SuccessMessage</div>
+}
+<div asp-validation-summary="All" class="notice notice-error" role="alert"></div>
+
+<section class="active-policy-bar" aria-labelledby="active-policy-title">
+    <div>
+        <p class="eyebrow">Active on the next device fetch</p>
+        @if (!Model.PoliciesAvailable)
+        {
+            <h2 id="active-policy-title">Policy status unavailable</h2>
+            <p>Reload this page to try again.</p>
+        }
+        else if (Model.ActivePolicy is { } active)
+        {
+            <h2 id="active-policy-title">@active.PolicyId <span class="policy-version">Version @active.Version</span></h2>
+            <p>@IndexModel.ModeLabel(active.AccessMode) · @IndexModel.ParityLabel(active.AllowedMinuteParity) · @IndexModel.TimeLabel(active.StartMinute)–@IndexModel.TimeLabel(active.EndMinute)</p>
+        }
+        else
+        {
+            <h2 id="active-policy-title">Access paused</h2>
+            <p>No policy is active. Activate a policy when you are ready to allow access.</p>
+        }
+    </div>
+    <div class="active-policy-actions">
+        <a href="/api/policy/active" class="text-link">View active policy JSON</a>
+        @if (Model.PoliciesAvailable && Model.ActivePolicy is not null)
+        {
+            <form method="post" asp-page-handler="Pause">
+                <button type="submit" class="secondary-button">Pause all access</button>
+            </form>
+        }
+    </div>
+</section>
+
+<section class="policy-presets" aria-labelledby="presets-title">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Start with an example</p>
+            <h2 id="presets-title">Suggested policies</h2>
+        </div>
+        <span class="muted">Choose one to fill the form</span>
+    </div>
+    <div class="preset-grid">
+        @foreach (var preset in IndexModel.Presets)
+        {
+            <a class="preset-card @(Model.SelectedPreset == preset.Id ? "is-selected" : "")"
+               asp-page="/Policies/Index" asp-route-preset="@preset.Id" asp-fragment="create-policy">
+                <strong>@preset.Title</strong>
+                <span>@preset.Description</span>
+            </a>
+        }
+    </div>
+</section>
+
+@if (!Model.PinConfigured)
+{
+    <div class="notice notice-info">
+        <strong>PIN setup is needed before you can set a PIN.</strong>
+        You can create fingerprint and deny-all policies now.
+        <a href="@pinSetupUrl">Follow the PIN setup instructions</a>.
+    </div>
+}
+
+<div class="policy-workspace policy-workspace-expanded">
+    <section class="policy-card" id="create-policy" aria-labelledby="create-title">
+        <div class="policy-card-heading">
+            <p class="eyebrow">New policy</p>
+            <h2 id="create-title">Create an access policy</h2>
+            <p class="field-help">New policies start at version 1. Suggested policies are saved only when you submit this form.</p>
+        </div>
+        <form method="post" asp-page-handler="Create" class="policy-form">
+            <div class="form-field">
+                <label asp-for="Input.PolicyId"></label>
+                <input asp-for="Input.PolicyId" placeholder="POL-001" maxlength="64" autocomplete="off" spellcheck="false" aria-describedby="policy-id-help policy-id-error" required />
+                <p id="policy-id-help" class="field-help">A unique ID using letters, numbers, hyphens or underscores. Letters are saved in uppercase.</p>
+                <span asp-validation-for="Input.PolicyId" id="policy-id-error" class="field-error"></span>
+            </div>
+            <div class="form-field">
+                <label asp-for="Input.AccessMode"></label>
+                <select asp-for="Input.AccessMode" aria-describedby="access-mode-help access-mode-error" required>
+                    <option value="fingerprintOrPin">Fingerprint or PIN</option>
+                    <option value="pinOnly">PIN only</option>
+                    <option value="fingerprintOnly">Fingerprint only</option>
+                    <option value="denyAll">Deny all access</option>
+                </select>
+                <p id="access-mode-help" class="field-help">Fingerprint or PIN accepts either method. Deny all keeps access closed.</p>
+                <span asp-validation-for="Input.AccessMode" id="access-mode-error" class="field-error"></span>
+            </div>
+            <div class="form-field">
+                <label asp-for="Input.AllowedMinuteParity"></label>
+                <select asp-for="Input.AllowedMinuteParity" aria-describedby="parity-help parity-error" required>
+                    <option value="any">Every minute</option>
+                    <option value="even">Even minutes</option>
+                    <option value="odd">Odd minutes</option>
+                </select>
+                <p id="parity-help" class="field-help">Even: 00, 02, 04… Odd: 01, 03, 05…</p>
+                <span asp-validation-for="Input.AllowedMinuteParity" id="parity-error" class="field-error"></span>
+            </div>
+            <fieldset class="form-group">
+                <legend>Daily time window</legend>
+                <div class="time-fields">
+                    <div class="form-field">
+                        <label asp-for="Input.StartTime"></label>
+                        <input asp-for="Input.StartTime" type="text" placeholder="00:00" maxlength="5" inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" aria-describedby="window-help start-time-error" required />
+                        <span asp-validation-for="Input.StartTime" id="start-time-error" class="field-error"></span>
+                    </div>
+                    <div class="form-field">
+                        <label asp-for="Input.EndTime"></label>
+                        <input asp-for="Input.EndTime" type="text" placeholder="24:00" maxlength="5" inputmode="numeric" pattern="([01][0-9]|2[0-3]):[0-5][0-9]|24:00" aria-describedby="window-help end-time-error" required />
+                        <span asp-validation-for="Input.EndTime" id="end-time-error" class="field-error"></span>
+                    </div>
+                </div>
+                <p id="window-help" class="field-help">Use 24-hour time. The start is included; the end is excluded. 00:00 to 24:00 allows the full day. The UNO's clock determines the time.</p>
+            </fieldset>
+            <fieldset class="form-group pin-fields" disabled="@(!Model.PinConfigured)">
+                <legend>Policy PIN</legend>
+                <p id="create-pin-help" class="field-help">Required for Fingerprint or PIN and PIN only. Use 4–8 digits; leading zeroes are kept. Leave empty for other methods.</p>
+                <div class="form-field">
+                    <label for="create-pin">PIN</label>
+                    <input id="create-pin" name="Input.Pin" type="password" inputmode="numeric" maxlength="8" pattern="[0-9]{4,8}" autocomplete="new-password" aria-describedby="create-pin-help create-pin-error" />
+                    <span asp-validation-for="Input.Pin" id="create-pin-error" class="field-error"></span>
+                </div>
+                <div class="form-field">
+                    <label for="create-confirm-pin">Confirm PIN</label>
+                    <input id="create-confirm-pin" name="Input.ConfirmPin" type="password" inputmode="numeric" maxlength="8" pattern="[0-9]{4,8}" autocomplete="new-password" aria-describedby="create-confirm-pin-error" />
+                    <span asp-validation-for="Input.ConfirmPin" id="create-confirm-pin-error" class="field-error"></span>
+                </div>
+                <p class="field-help">PINs are never shown after submission. If a form needs correcting, enter the PIN again.</p>
+            </fieldset>
+            <div class="form-field">
+                <div class="checkbox-field">
+                    <input asp-for="Input.MakeActive" aria-describedby="active-help" />
+                    <label asp-for="Input.MakeActive"></label>
+                </div>
+                <p id="active-help" class="field-help">Replaces the current active policy. Leave unchecked to save it for later.</p>
+            </div>
+            <button type="submit" class="primary-link">Add policy</button>
+        </form>
+    </section>
+
+    <section class="policy-card policy-list" aria-labelledby="policy-list-title">
+        <div class="policy-card-heading section-heading">
+            <div>
+                <p class="eyebrow">Saved policies</p>
+                <h2 id="policy-list-title">Your policy list</h2>
+            </div>
+            @if (Model.PoliciesAvailable)
+            {
+                <span class="status-label">@Model.Policies.Count @(Model.Policies.Count == 1 ? "policy" : "policies")</span>
+            }
+            <a href="#create-policy" class="secondary-button">Add policy</a>
+        </div>
+        @if (!Model.PoliciesAvailable)
+        {
+            <div class="empty-state">
+                <h3>Policy list unavailable</h3>
+                <p>Reload this page to try again.</p>
+            </div>
+        }
+        else if (Model.Policies.Count == 0)
+        {
+            <div class="empty-state">
+                <h3>No policies created yet</h3>
+                <p>Choose a suggested policy or fill in the form to create your first one.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var policy in Model.Policies)
+            {
+                <article class="saved-policy @(policy.Enabled ? "saved-policy-active" : "")" aria-labelledby="saved-policy-@policy.PolicyId">
+                    <div class="saved-policy-heading">
+                        <div>
+                            <h3 id="saved-policy-@policy.PolicyId">@policy.PolicyId</h3>
+                            <span class="policy-version">Version @policy.Version</span>
+                        </div>
+                        <span class="policy-status @(policy.Enabled ? "is-enabled" : "is-disabled")">@(policy.Enabled ? "Active" : "Inactive")</span>
+                    </div>
+                    <dl class="policy-details">
+                        <div><dt>Access method</dt><dd>@IndexModel.ModeLabel(policy.AccessMode)</dd></div>
+                        <div><dt>Allowed minutes</dt><dd>@IndexModel.ParityLabel(policy.AllowedMinuteParity)</dd></div>
+                        <div><dt>Daily window</dt><dd>@IndexModel.TimeLabel(policy.StartMinute)–@IndexModel.TimeLabel(policy.EndMinute)</dd></div>
+                        <div><dt>Policy PIN</dt><dd>@(IndexModel.AllowsPin(policy.AccessMode) ? "Set" : "Not used")</dd></div>
+                    </dl>
+                    <div class="policy-actions">
+                        @if (!policy.Enabled)
+                        {
+                            <form method="post" asp-page-handler="Activate">
+                                <input type="hidden" name="policyId" value="@policy.PolicyId" />
+                                <button type="submit" class="secondary-button">Make active</button>
+                            </form>
+                        }
+                        <form method="post" asp-page-handler="Remove">
+                            <input type="hidden" name="policyId" value="@policy.PolicyId" />
+                            <button type="submit" class="secondary-button remove-policy-button" aria-label="Remove policy @policy.PolicyId">Remove policy</button>
+                        </form>
+                    </div>
+                    @if (IndexModel.AllowsPin(policy.AccessMode))
+                    {
+                        <details class="reset-pin" open="@(Model.Reset.PolicyId == policy.PolicyId && !ViewData.ModelState.IsValid)">
+                            <summary>Set a new PIN</summary>
+                            @if (!Model.PinConfigured)
+                            {
+                                <p class="field-help"><a href="@pinSetupUrl">Complete PIN setup</a> before changing this policy's PIN.</p>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="ResetPin">
+                                    <input type="hidden" name="Reset.PolicyId" value="@policy.PolicyId" />
+                                    <div class="reset-pin-fields">
+                                        <div class="form-field">
+                                            <label for="new-pin-@policy.PolicyId">New PIN</label>
+                                            <input id="new-pin-@policy.PolicyId" name="Reset.Pin" type="password" inputmode="numeric" maxlength="8" pattern="[0-9]{4,8}" autocomplete="new-password" required />
+                                            @if (Model.Reset.PolicyId == policy.PolicyId)
+                                            {
+                                                <span asp-validation-for="Reset.Pin" class="field-error"></span>
+                                            }
+                                        </div>
+                                        <div class="form-field">
+                                            <label for="confirm-pin-@policy.PolicyId">Confirm PIN</label>
+                                            <input id="confirm-pin-@policy.PolicyId" name="Reset.ConfirmPin" type="password" inputmode="numeric" maxlength="8" pattern="[0-9]{4,8}" autocomplete="new-password" required />
+                                            @if (Model.Reset.PolicyId == policy.PolicyId)
+                                            {
+                                                <span asp-validation-for="Reset.ConfirmPin" class="field-error"></span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <p class="field-help">Use 4–8 digits. Saving replaces this policy's PIN and increases its version.</p>
+                                    <button type="submit" class="secondary-button">Save new PIN</button>
+                                </form>
+                            }
+                        </details>
+                    }
+                </article>
+            }
+        }
+        <div class="policy-list-footer">
+            <a href="/api/policy">View JSON policy list <span aria-hidden="true">↗</span></a>
+            <p class="field-help">Adding or removing a policy updates the JSON list immediately. Removing the active policy pauses access on the UNO's next fetch.</p>
+        </div>
+    </section>
+</div>

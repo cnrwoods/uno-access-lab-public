@@ -1,0 +1,11 @@
+# Local operator configuration
+config/config.ps1
+
+# Generated files
+.generated/
+*.tmp
+*.log
+
+# Never commit secrets
+*.secret
+*.secrets.json

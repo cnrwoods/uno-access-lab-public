@@ -1,0 +1,86 @@
+{
+  "realm": "fingauth",
+  "displayName": "Fing Auth",
+  "loginTheme": "fingauth",
+  "enabled": true,
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "platform-admin",
+        "description": "Full Fingerprint management-plane administration"
+      },
+      {
+        "name": "platform-operator",
+        "description": "Operational management of the Fingerprint platform"
+      },
+      {
+        "name": "platform-auditor",
+        "description": "Read-only audit and assurance access"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "fingerprint-management-plane",
+      "name": "Fingerprint Management Plane",
+      "rootUrl": "https://localhost:7080/",
+      "baseUrl": "https://localhost:7080/",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "https://localhost:7080/signin-oidc"
+      ],
+      "webOrigins": [],
+      "fullScopeAllowed": false,
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "roles"
+      ],
+      "protocolMappers": [
+        {
+          "name": "portal-realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "usermodel.realmRoleMapping.rolePrefix": "",
+            "multivalued": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "lightweight.claim": "false",
+            "introspection.token.claim": "false"
+          }
+        }
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "https://localhost:7080/signout-callback-oidc"
+      }
+    }
+  ],
+  "scopeMappings": [
+    {
+      "client": "fingerprint-management-plane",
+      "roles": [
+        "platform-admin",
+        "platform-operator",
+        "platform-auditor"
+      ]
+    }
+  ]
+}
